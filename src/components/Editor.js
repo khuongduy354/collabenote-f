@@ -1,61 +1,70 @@
-import React, { useEffect, useState } from "react";
-import { OpTypes, Operation } from "./classes/operation";
-import { findFirstDiff } from "../helper/stringHandle";
+import React, { useEffect, useRef, useState } from "react";
+import { extractOperation, opsToText } from "../helper/stringHandle";
+import { initWebsocket } from "../helper/socket";
+import { applyOT } from "./classes/OTfunctions";
 
 function TextArea({ textValue, handleTextChange }) {
   return <textarea onChange={handleTextChange} value={textValue}></textarea>;
 }
-export const opsToText = (opsList) => {
-  let result = [];
-  for (let idx in opsList) {
-    let op = opsList[idx];
-    switch (op.optype) {
-      case OpTypes.Insert:
-        result[op.position] = op.text;
-        break;
-      case OpTypes.Delete:
-        result[op.position] = "";
-        break;
-      default:
-        throw new Error("Invalid optypes");
-    }
-  }
-  result = result.map((val) => (val === undefined ? "" : val));
-  return result.join("");
-};
-export const extractOperation = (oldVal, newVal) => {
-  if (oldVal.length === newVal.length) {
-    return null;
-  }
-  if (oldVal.length > newVal.length) {
-    let pos = findFirstDiff(oldVal, newVal);
-    return new Operation(OpTypes.Delete, { position: pos });
-  }
-  if (oldVal.length < newVal.length) {
-    let pos = findFirstDiff(oldVal, newVal);
-    return new Operation(OpTypes.Insert, {
-      position: pos,
-      text: newVal.charAt(pos),
-    });
-  }
-};
-export function Editor() {
+
+export function Editor({ roomName }) {
   const [opsList, setOpsList] = useState([]);
   const [textValue, setTextValue] = useState("");
 
-  // list of operations
-  //function convert ops -> string
-  // text area to render the string
+  const ack = useRef(true);
+  const pendingChanges = useRef([]);
+  const rid = useRef(0);
 
   useEffect(() => {
     setTextValue(opsToText(opsList));
   }, [opsList]);
+
+  useEffect(() => {
+    // attempt sync if ack true
+    if (ack) sendSync();
+  }, [ack]);
+
+  useEffect(() => {
+    const socket = initWebsocket();
+    function syncReceiveText(payload) {
+      if (payload.socketId === socket.id) {
+        ack.current = true;
+      } else {
+        pendingChanges.current.map((op) => applyOT(op, payload.op));
+        const unsyncStartIdx = opsList.length - pendingChanges.current.length;
+        let temp_list = [];
+        for (let i = unsyncStartIdx; i < opsList.length; i++) {
+          temp_list.push(applyOT(opsList[i], payload.op));
+        }
+        setOpsList([...opsList.slice(0, unsyncStartIdx), ...temp_list]);
+      }
+      rid.current = payload.rid;
+    }
+
+    socket.on("syncTextResponse", syncReceiveText);
+  }, []);
+
+  const handleSync = (op) => {
+    pendingChanges.current.push(op);
+    sendSync();
+  };
+
+  const sendSync = () => {
+    if (ack.current && pendingChanges.current.length > 0) {
+      const socket = initWebsocket();
+
+      const op = pendingChanges.current.shift();
+      socket.emit("syncText", roomName, { op, rid: rid.current });
+      ack.current = false;
+    }
+  };
 
   const handleTextChange = (e) => {
     let newText = e.target.value;
     const op = extractOperation(textValue, newText);
     if (op) {
       setOpsList([...opsList, op]);
+      handleSync(op);
     }
   };
   return (

@@ -1,5 +1,4 @@
 import "./App.css";
-import Doc from "./components/Doc";
 import { useState } from "react";
 import { initWebsocket } from "./helper/socket";
 import TextEditor from "./components/TextEditor";

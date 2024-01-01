@@ -5,6 +5,7 @@ export class OpTypes {
 export class Operation {
   constructor(optype, payload) {
     this.optype = optype;
+    this.revisionId = 0;
     switch (optype) {
       case OpTypes.Delete:
         this.position = payload.position;

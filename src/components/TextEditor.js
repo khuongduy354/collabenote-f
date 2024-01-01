@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { initWebsocket } from "../helper/socket";
+import React from "react";
 import { Editor } from "./Editor";
 
 function TextEditor({ roomName }) {
@@ -7,10 +6,8 @@ function TextEditor({ roomName }) {
     <div className="flex bg-[#F8F9FA] min-h-screen pb-4">
       <button onClick={() => {}}>clear</button>
       <div className="ml-4">
-        <Editor />
+        <Editor roomName={roomName} />
       </div>
-
-      {/* <SideBar /> */}
     </div>
   );
 }
