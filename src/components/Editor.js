@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { extractOperation, opsToText } from "../helper/stringHandle";
 import { initWebsocket } from "../helper/socket";
 import { applyOT } from "./classes/OTfunctions";
+import { AlignVerticalTop } from "@mui/icons-material";
 
 function TextArea({ textValue, handleTextChange }) {
   return <textarea onChange={handleTextChange} value={textValue}></textarea>;
@@ -36,13 +37,19 @@ export function Editor({ roomName }) {
         for (let i = unsyncStartIdx; i < opsList.length; i++) {
           temp_list.push(applyOT(opsList[i], payload.op));
         }
-        setOpsList([...opsList.slice(0, unsyncStartIdx), ...temp_list]);
+
+        let newOpList = [
+          ...opsList.slice(0, unsyncStartIdx),
+          ...temp_list,
+          payload.op,
+        ];
+        setOpsList(newOpList);
       }
       rid.current = payload.rid;
     }
 
     socket.on("syncTextResponse", syncReceiveText);
-  }, []);
+  }, [opsList]);
 
   const handleSync = (op) => {
     pendingChanges.current.push(op);
