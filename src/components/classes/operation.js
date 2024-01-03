@@ -1,8 +1,8 @@
-export class OpTypes {
+class OpTypes {
   static Delete = 0;
   static Insert = 1;
 }
-export class Operation {
+class Operation {
   constructor(optype, payload) {
     this.optype = optype;
     this.revisionId = 0;
@@ -19,3 +19,5 @@ export class Operation {
     }
   }
 }
+
+module.exports = { OpTypes, Operation };

@@ -23,7 +23,9 @@ export const opsToText = (opsList) => {
         throw new Error("Invalid optypes");
     }
   }
-  result = result.map((val) => (val === undefined ? "" : val));
+  for (let i = 0; i < result.length; i++) {
+    if (result[i] === undefined) result[i] = " ";
+  }
   return result.join("");
 };
 export const extractOperation = (oldVal, newVal) => {

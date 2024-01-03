@@ -1,5 +1,5 @@
 import "./App.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { initWebsocket } from "./helper/socket";
 import TextEditor from "./components/TextEditor";
 const RoomNameComponent = ({ roomName, setRoomName, setShowEditor }) => {
@@ -39,9 +39,26 @@ const RoomNameComponent = ({ roomName, setRoomName, setShowEditor }) => {
   );
 };
 const App = () => {
-  const [roomName, setRoomName] = useState("");
+  const [roomName, setRoomName] = useState("hell");
   const [showEditor, setShowEditor] = useState(false);
+  useEffect(() => {
+    enterRoom();
+  }, []);
 
+  const enterRoom = () => {
+    const socket = initWebsocket();
+
+    socket.on("connect", () => {
+      socket.emit("join", roomName);
+      console.log("connected");
+    });
+
+    socket.on("roomNotify", (msg) => {
+      alert(msg);
+    });
+
+    setShowEditor(true);
+  };
   return (
     <div className="App">
       {showEditor ? (
